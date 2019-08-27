@@ -631,6 +631,7 @@ class WC_Facebookcommerce_Integration extends WC_Integration {
 				printf( '<span>Not Synced</span>' );
 			} else {
 				$viz_value = get_post_meta( $post->ID, self::FB_VISIBILITY, true );
+
 				$data_tip  = $viz_value === '' ?
 				'Product is synced but not marked as published (visible)
           on Facebook.' :
@@ -1136,7 +1137,12 @@ class WC_Facebookcommerce_Integration extends WC_Integration {
 
 		// Default visibility on create = published
 		$woo_product->fb_visibility = true;
-		update_post_meta( $woo_product->get_id(), self::FB_VISIBILITY, true );
+
+		if ( ! $this->woo_product->is_visible() ) {
+			$this->fb_visibility = false;
+		}
+
+		update_post_meta( $woo_product->get_id(), self::FB_VISIBILITY, $this->fb_visibility );
 
 		if ( $variants ) {
 			$product_group_data['variants'] =
@@ -1176,12 +1182,16 @@ class WC_Facebookcommerce_Integration extends WC_Integration {
 	function create_product_item( $woo_product, $retailer_id, $product_group_id ) {
 		// Default visibility on create = published
 		$woo_product->fb_visibility = true;
+		if ( ! $this->woo_product->is_visible() ) {
+			$this->fb_visibility = false;
+		}
+
 		$product_data               = $woo_product->prepare_product( $retailer_id );
 		if ( ! $product_data['price'] ) {
 			return 0;
 		}
 
-		update_post_meta( $woo_product->get_id(), self::FB_VISIBILITY, true );
+		update_post_meta( $woo_product->get_id(), self::FB_VISIBILITY, $woo_product->fb_visibility );
 
 		$product_result = $this->check_api_result(
 			$this->fbgraph->create_product_item(
@@ -1750,8 +1760,7 @@ class WC_Facebookcommerce_Integration extends WC_Integration {
 
 			$feed_item = array(
 				'title'        => strip_tags( $product_data['name'] ),
-				'availability' => $woo_product->is_in_stock() ? 'in stock' :
-				'out of stock',
+				'availability' => $woo_product->is_in_stock() ? 'in stock' : 'out of stock',
 				'description'  => strip_tags( $product_data['description'] ),
 				'id'           => $product_data['retailer_id'],
 				'image_link'   => $product_data['image_url'],
@@ -2840,7 +2849,13 @@ class WC_Facebookcommerce_Integration extends WC_Integration {
 					$fbid_type,
 					$fb_id
 				);
-				update_post_meta( $wp_id, self::FB_VISIBILITY, true );
+				if ( ! $this->woo_product->is_visible() ) {
+					$visibility = false;
+				} else {
+					$visibility = true;
+                }
+
+				update_post_meta( $wp_id, self::FB_VISIBILITY, $visibility );
 				return $fb_id;
 			}
 		}

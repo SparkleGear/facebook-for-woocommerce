@@ -55,6 +55,10 @@ if ( ! class_exists( 'WC_Facebook_Product' ) ) :
 			$this->main_description       = '';
 			$this->sync_short_description = get_option( 'fb_sync_short_description', false );
 
+			if ( ! $this->woo_product->is_visible() ) {
+				$this->fb_visibility = false;
+			}
+
 			// Variable products should use some data from the parent_product
 			// For performance reasons, that data shouldn't be regenerated every time.
 			if ( $parent_product ) {
@@ -63,6 +67,10 @@ if ( ! class_exists( 'WC_Facebook_Product' ) ) :
 				$this->main_description    = WC_Facebookcommerce_Utils::clean_string(
 					$parent_product->get_description()
 				);
+				if ( ! $parent_product->is_visible() ) {
+					$this->fb_visibility = false;
+				}
+
 			}
 		}
 
